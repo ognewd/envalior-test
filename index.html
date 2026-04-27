@@ -94,21 +94,11 @@
 
     function handleApiResponse(data) {
       var responseEl = document.getElementById("api-response");
-      if (data.errorCode === 0) {
-        responseEl.className = "api-response success";
-        responseEl.innerHTML =
-          "<strong>Login successful</strong><br>" +
-          "UID: " + (data.UID || "—") + "<br>" +
-          "Email: " + (data.profile && data.profile.email ? data.profile.email : "—") + "<br>" +
-          "First name: " + (data.profile && data.profile.firstName ? data.profile.firstName : "—") + "<br>" +
-          "UIDSignature: " + (data.UIDSignature || "—");
-      } else {
-        responseEl.className = "api-response error";
-        responseEl.innerHTML =
-          "<strong>Login failed</strong><br>" +
-          "Error " + data.errorCode + ": " + (data.errorMessage || "Unknown error") +
-          (data.errorDetails ? "<br><small>" + data.errorDetails + "</small>" : "");
-      }
+      var status = data.errorCode === 0 ? "success" : "error";
+      responseEl.className = "api-response " + status;
+      responseEl.innerHTML =
+        "<strong>" + (status === "success" ? "Login successful" : "Login failed") + "</strong>" +
+        "<pre class='api-log'>" + JSON.stringify(data, null, 2) + "</pre>";
     }
 
     document.addEventListener("DOMContentLoaded", function () {
@@ -263,11 +253,15 @@
       color: #c62828;
     }
 
-    .meta-row {
+    .api-log {
+      margin-top: 10px;
+      font-family: monospace;
       font-size: 12px;
-      color: #aaa;
-      margin-top: 4px;
+      white-space: pre-wrap;
       word-break: break-all;
+      background: rgba(0,0,0,0.04);
+      padding: 10px;
+      border-radius: 4px;
     }
 
     footer {
