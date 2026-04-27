@@ -45,28 +45,12 @@
     var USER_KEY = "AGfMj9yMhT6C";
     var SECRET   = "RFclk507DfVyiP9Ex2ILNcMWZ3WxEmRB";
 
-    var DATA_CENTERS = [
-      "https://accounts.eu1.gigya.com",
-      "https://accounts.gigya.com",
-      "https://accounts.us1.gigya.com"
-    ];
+    var BASE_URL = "https://accounts.eu1.gigya.com";
 
     function apiLogin(email, password) {
       var responseEl = document.getElementById("api-response");
       responseEl.className = "api-response";
       responseEl.textContent = "Calling API...";
-      tryLogin(email, password, 0, responseEl);
-    }
-
-    function tryLogin(email, password, dcIndex, responseEl) {
-      if (dcIndex >= DATA_CENTERS.length) {
-        responseEl.className = "api-response error";
-        responseEl.textContent = "All data centers failed. Check credentials or network.";
-        return;
-      }
-
-      var url = DATA_CENTERS[dcIndex] + "/accounts.login";
-      responseEl.textContent = "Trying " + DATA_CENTERS[dcIndex] + " ...";
 
       var params = new URLSearchParams({
         apiKey:   API_KEY,
@@ -77,26 +61,25 @@
         format:   "json"
       });
 
-      fetch(url, {
+      fetch(BASE_URL + "/accounts.login", {
         method:  "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body:    params.toString()
       })
       .then(function (res) { return res.json(); })
-      .then(function (data) { handleApiResponse(data, DATA_CENTERS[dcIndex]); })
+      .then(function (data) { handleApiResponse(data); })
       .catch(function (err) {
-        // Likely CORS or network — try next data center
-        tryLogin(email, password, dcIndex + 1, responseEl);
+        responseEl.className = "api-response error";
+        responseEl.textContent = "Network error: " + err.message;
       });
     }
 
-    function handleApiResponse(data, dc) {
+    function handleApiResponse(data) {
       var responseEl = document.getElementById("api-response");
       var status = data.errorCode === 0 ? "success" : "error";
       responseEl.className = "api-response " + status;
       responseEl.innerHTML =
         "<strong>" + (status === "success" ? "Login successful" : "Login failed") + "</strong>" +
-        " <small style='opacity:0.6'>via " + dc + "</small>" +
         "<pre class='api-log'>" + JSON.stringify(data, null, 2) + "</pre>";
     }
 
