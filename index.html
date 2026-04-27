@@ -41,63 +41,62 @@
   </script>
 
   <script>
-    // Gigya REST API login using userKey + secret (no SDK)
+    var API_KEY  = "4_uaGvi2v3t0MdVlT0Z8gzug";
+    var USER_KEY = "AGfMj9yMhT6C";
+    var SECRET   = "RFclk507DfVyiP9Ex2ILNcMWZ3WxEmRB";
+
+    var DATA_CENTERS = [
+      "https://accounts.eu1.gigya.com",
+      "https://accounts.gigya.com",
+      "https://accounts.us1.gigya.com"
+    ];
+
     function apiLogin(email, password) {
       var responseEl = document.getElementById("api-response");
       responseEl.className = "api-response";
       responseEl.textContent = "Calling API...";
+      tryLogin(email, password, 0, responseEl);
+    }
 
-      var API_KEY    = "4_uaGvi2v3t0MdVlT0Z8gzug";
-      var USER_KEY   = "AGfMj9yMhT6C";
-      var SECRET     = "RFclk507DfVyiP9Ex2ILNcMWZ3WxEmRB";
-      var callbackFn = "gigyaCb_" + Date.now();
+    function tryLogin(email, password, dcIndex, responseEl) {
+      if (dcIndex >= DATA_CENTERS.length) {
+        responseEl.className = "api-response error";
+        responseEl.textContent = "All data centers failed. Check credentials or network.";
+        return;
+      }
 
-      var params = {
+      var url = DATA_CENTERS[dcIndex] + "/accounts.login";
+      responseEl.textContent = "Trying " + DATA_CENTERS[dcIndex] + " ...";
+
+      var params = new URLSearchParams({
         apiKey:   API_KEY,
         userKey:  USER_KEY,
         secret:   SECRET,
         loginID:  email,
         password: password,
-        format:   "json",
-        callback: callbackFn
-      };
+        format:   "json"
+      });
 
-      var qs = Object.keys(params)
-        .map(function (k) { return encodeURIComponent(k) + "=" + encodeURIComponent(params[k]); })
-        .join("&");
-
-      window[callbackFn] = function (data) {
-        delete window[callbackFn];
-        if (script.parentNode) script.parentNode.removeChild(script);
-        handleApiResponse(data);
-      };
-
-      var script = document.createElement("script");
-      script.src = "https://accounts.eu1.gigya.com/accounts.login?" + qs;
-      script.onerror = function () {
-        if (script.parentNode) script.parentNode.removeChild(script);
-        responseEl.className = "api-response error";
-        responseEl.textContent = "Network error — check data center or credentials.";
-      };
-      document.head.appendChild(script);
-
-      // Timeout fallback in case the script loads but callback never fires
-      setTimeout(function () {
-        if (window[callbackFn]) {
-          delete window[callbackFn];
-          if (script.parentNode) script.parentNode.removeChild(script);
-          responseEl.className = "api-response error";
-          responseEl.textContent = "Request timed out — no response from Gigya.";
-        }
-      }, 10000);
+      fetch(url, {
+        method:  "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body:    params.toString()
+      })
+      .then(function (res) { return res.json(); })
+      .then(function (data) { handleApiResponse(data, DATA_CENTERS[dcIndex]); })
+      .catch(function (err) {
+        // Likely CORS or network — try next data center
+        tryLogin(email, password, dcIndex + 1, responseEl);
+      });
     }
 
-    function handleApiResponse(data) {
+    function handleApiResponse(data, dc) {
       var responseEl = document.getElementById("api-response");
       var status = data.errorCode === 0 ? "success" : "error";
       responseEl.className = "api-response " + status;
       responseEl.innerHTML =
         "<strong>" + (status === "success" ? "Login successful" : "Login failed") + "</strong>" +
+        " <small style='opacity:0.6'>via " + dc + "</small>" +
         "<pre class='api-log'>" + JSON.stringify(data, null, 2) + "</pre>";
     }
 
