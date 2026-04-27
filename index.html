@@ -40,6 +40,77 @@
     })();
   </script>
 
+  <script>
+    // Gigya REST API login using userKey + secret (no SDK)
+    function apiLogin(email, password) {
+      var responseEl = document.getElementById("api-response");
+      responseEl.className = "api-response";
+      responseEl.textContent = "Calling API...";
+
+      var API_KEY    = "4_uaGvi2v3t0MdVlT0Z8gzug";
+      var USER_KEY   = "AGfMj9yMhT6C";
+      var SECRET     = "RFclk507DfVyiP9Ex2ILNcMWZ3WxEmRB";
+      var callbackFn = "gigyaCb_" + Date.now();
+
+      var params = {
+        apiKey:   API_KEY,
+        userKey:  USER_KEY,
+        secret:   SECRET,
+        loginID:  email,
+        password: password,
+        format:   "json",
+        callback: callbackFn
+      };
+
+      var qs = Object.keys(params)
+        .map(function (k) { return encodeURIComponent(k) + "=" + encodeURIComponent(params[k]); })
+        .join("&");
+
+      window[callbackFn] = function (data) {
+        delete window[callbackFn];
+        if (script.parentNode) script.parentNode.removeChild(script);
+        handleApiResponse(data);
+      };
+
+      var script = document.createElement("script");
+      script.src = "https://accounts.gigya.com/accounts.login?" + qs;
+      script.onerror = function () {
+        if (script.parentNode) script.parentNode.removeChild(script);
+        responseEl.className = "api-response error";
+        responseEl.textContent = "Network error — request failed.";
+      };
+      document.head.appendChild(script);
+    }
+
+    function handleApiResponse(data) {
+      var responseEl = document.getElementById("api-response");
+      if (data.errorCode === 0) {
+        responseEl.className = "api-response success";
+        responseEl.innerHTML =
+          "<strong>Login successful</strong><br>" +
+          "UID: " + (data.UID || "—") + "<br>" +
+          "Email: " + (data.profile && data.profile.email ? data.profile.email : "—") + "<br>" +
+          "First name: " + (data.profile && data.profile.firstName ? data.profile.firstName : "—") + "<br>" +
+          "UIDSignature: " + (data.UIDSignature || "—");
+      } else {
+        responseEl.className = "api-response error";
+        responseEl.innerHTML =
+          "<strong>Login failed</strong><br>" +
+          "Error " + data.errorCode + ": " + (data.errorMessage || "Unknown error") +
+          (data.errorDetails ? "<br><small>" + data.errorDetails + "</small>" : "");
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+      document.getElementById("api-login-form").addEventListener("submit", function (e) {
+        e.preventDefault();
+        var email    = document.getElementById("api-email").value.trim();
+        var password = document.getElementById("api-password").value;
+        apiLogin(email, password);
+      });
+    });
+  </script>
+
   <style>
     * {
       box-sizing: border-box;
@@ -72,9 +143,19 @@
     main {
       flex: 1;
       display: flex;
-      justify-content: center;
-      align-items: flex-start;
+      flex-direction: column;
+      align-items: center;
       padding: 48px 16px;
+      gap: 40px;
+    }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #888;
+      margin-bottom: 12px;
     }
 
     #cdc-container {
@@ -85,6 +166,98 @@
       width: 100%;
       max-width: 480px;
       min-height: 200px;
+    }
+
+    /* API login card */
+    #api-login-card {
+      background: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+      padding: 32px;
+      width: 100%;
+      max-width: 480px;
+    }
+
+    #api-login-card h2 {
+      font-size: 18px;
+      color: #003087;
+      margin-bottom: 20px;
+    }
+
+    #api-login-form .field {
+      margin-bottom: 16px;
+    }
+
+    #api-login-form label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #444;
+      margin-bottom: 6px;
+    }
+
+    #api-login-form input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    #api-login-form input:focus {
+      border-color: #003087;
+    }
+
+    #api-login-form button {
+      width: 100%;
+      padding: 11px;
+      background-color: #003087;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      margin-top: 4px;
+    }
+
+    #api-login-form button:hover {
+      background-color: #00216b;
+    }
+
+    .api-response {
+      margin-top: 20px;
+      padding: 14px;
+      border-radius: 4px;
+      font-size: 13px;
+      line-height: 1.6;
+      display: none;
+    }
+
+    .api-response:not(:empty) {
+      display: block;
+    }
+
+    .api-response.success {
+      background: #e8f5e9;
+      border: 1px solid #a5d6a7;
+      color: #2e7d32;
+    }
+
+    .api-response.error {
+      background: #fdecea;
+      border: 1px solid #f5c6c6;
+      color: #c62828;
+    }
+
+    .meta-row {
+      font-size: 12px;
+      color: #aaa;
+      margin-top: 4px;
+      word-break: break-all;
     }
 
     footer {
@@ -102,9 +275,35 @@
   </header>
 
   <main>
-    <div id="cdc-container">
-      <p style="color:#888;font-size:14px;">Loading...</p>
+
+    <!-- Section 1: CDC ScreenSet (SDK) -->
+    <div style="width:100%;max-width:480px;">
+      <div class="section-label">ScreenSet Login (SDK)</div>
+      <div id="cdc-container">
+        <p style="color:#888;font-size:14px;">Loading...</p>
+      </div>
     </div>
+
+    <!-- Section 2: REST API Login (userKey / secret) -->
+    <div style="width:100%;max-width:480px;">
+      <div class="section-label">REST API Login (userKey / secret)</div>
+      <div id="api-login-card">
+        <h2>Sign in via API</h2>
+        <form id="api-login-form" novalidate>
+          <div class="field">
+            <label for="api-email">Email</label>
+            <input type="email" id="api-email" value="ognew.d@gmail.com" autocomplete="email" required />
+          </div>
+          <div class="field">
+            <label for="api-password">Password</label>
+            <input type="password" id="api-password" value="Test123!" autocomplete="current-password" required />
+          </div>
+          <button type="submit">Login</button>
+        </form>
+        <div id="api-response" class="api-response"></div>
+      </div>
+    </div>
+
   </main>
 
   <footer>
