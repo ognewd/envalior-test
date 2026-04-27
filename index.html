@@ -73,13 +73,23 @@
       };
 
       var script = document.createElement("script");
-      script.src = "https://accounts.gigya.com/accounts.login?" + qs;
+      script.src = "https://accounts.eu1.gigya.com/accounts.login?" + qs;
       script.onerror = function () {
         if (script.parentNode) script.parentNode.removeChild(script);
         responseEl.className = "api-response error";
-        responseEl.textContent = "Network error — request failed.";
+        responseEl.textContent = "Network error — check data center or credentials.";
       };
       document.head.appendChild(script);
+
+      // Timeout fallback in case the script loads but callback never fires
+      setTimeout(function () {
+        if (window[callbackFn]) {
+          delete window[callbackFn];
+          if (script.parentNode) script.parentNode.removeChild(script);
+          responseEl.className = "api-response error";
+          responseEl.textContent = "Request timed out — no response from Gigya.";
+        }
+      }, 10000);
     }
 
     function handleApiResponse(data) {
