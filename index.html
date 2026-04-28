@@ -235,6 +235,39 @@
       color: #c62828;
     }
 
+    .nav-card {
+      background: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+
+    .nav-link {
+      display: flex;
+      flex-direction: column;
+      padding: 18px 20px;
+      text-decoration: none;
+      color: inherit;
+      border-left: 4px solid #003087;
+      transition: background 0.15s;
+    }
+
+    .nav-link:hover {
+      background: #f0f4ff;
+    }
+
+    .nav-link-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #003087;
+    }
+
+    .nav-link-sub {
+      font-size: 12px;
+      color: #888;
+      margin-top: 3px;
+    }
+
     .api-log {
       margin-top: 10px;
       font-family: monospace;
@@ -287,6 +320,17 @@
           <button type="submit">Login</button>
         </form>
         <div id="api-response" class="api-response"></div>
+      </div>
+    </div>
+
+    <!-- Section 3: Other screens -->
+    <div style="width:100%;max-width:480px;">
+      <div class="section-label">Other screens</div>
+      <div class="nav-card">
+        <a href="acc-cname.html" class="nav-link">
+          <span class="nav-link-title">ACC CNAME Login</span>
+          <span class="nav-link-sub">acc-id.envalior.com &rarr; Default-RegistrationLogin</span>
+        </a>
       </div>
     </div>
 
